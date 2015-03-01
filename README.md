@@ -8,24 +8,24 @@ Show history of cvs commits similar to git or svn
 
 1. Show history of all commits in the main branch of moduleA
 
-```
-cvs-history.py moduleA
-```
+   ```
+   cvs-history.py moduleA
+   ```
 
 2. Show history of commits in feature_branch of moduleA
 
-```
-cvs-history.py -b feature_branch moduleA
-```
+   ```
+   cvs-history.py -b feature_branch moduleA
+   ```
 
 3. Show history of commits for the last 5 days in feature_branch of moduleA
 
-If you have a long history of commits, the tool might take a long time to run.
-If you only want to see the history for the past 5 days, you can supply that option.
+   If you have a long history of commits, the tool might take a long time to run.
+   If you only want to see the history for the past 5 days, you can supply that option.
 
-```
-cvs-history.py -n 5 -b feature_branch moduleA
-```
+   ```
+   cvs-history.py -n 5 -b feature_branch moduleA
+   ```
 
 #### Complete syntax
 
