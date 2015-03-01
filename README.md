@@ -12,10 +12,39 @@ Show history of cvs commits similar to git or svn
    cvs-history.py moduleA
    ```
 
+   Sample output:
+   ```
+   Retrieving all commit history. Please wait...
+   2015-03-01 00:44 +0000 trunk alvin
+       Added method_2C
+     M   1.4                hello_cvs/hello2.py
+
+   2015-03-01 00:37 +0000 trunk alvin
+       Added method_1C
+       Fixed method_1B
+     M   1.7                hello_cvs/hello1.py
+
+   2015-02-28 23:52 +0000 trunk alice
+       Added method_1B
+     M   1.6                hello_cvs/hello1.py
+   ```
+
 2. Show history of commits in feature_branch of moduleA
 
    ```
    cvs-history.py -b feature_branch moduleA
+   ```
+
+   Sample output:
+   ```
+   Retrieving all commit history. Please wait...
+   2015-03-01 00:42 +0000 feature_branch alice
+       Added doc for method_3A
+     M   1.1.2.2            hello_cvs/hello3.py
+
+   2015-03-01 00:38 +0000 feature_branch alice
+       Adde hello3.py
+     A   1.1.2.1            hello_cvs/hello3.py
    ```
 
 3. Show history of commits for the last 5 days in feature_branch of moduleA
