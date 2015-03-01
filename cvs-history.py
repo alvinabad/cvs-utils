@@ -304,7 +304,7 @@ def main(args):
         display(history)
 
 def parse_cmdline():
-    parser = argparse.ArgumentParser(description="Show CVS commit history like the way git or svn do")
+    parser = argparse.ArgumentParser(description="Show history of cvs commits similar to git or svn")
 
     parser.add_argument('-n', '--days',
                         required=False,
