@@ -276,6 +276,10 @@ def get_history(start=None, files=None, branch=None, summary=False):
             commit[commit_time]['date'] = info['date']
             commit[commit_time]['commitid'] = info['commitid']
 
+        # Get the latest date
+        if info['date'] > commit[commit_time]['date']:
+            commit[commit_time]['date'] = info['date']
+
         # if commit is a removal of a file, don't use branch of commit
         if f_change == 'R':
             commit[commit_time]['branch'] = branch
