@@ -55,14 +55,36 @@ def get_branch_name(info):
 
     return None
 
+def get_commit_date(line):
+    """
+    date: 2015-03-01 19:45:52 -0800;  author: alvin;  state: Exp;  lines: +1 -0;  commitid: 10054F3DCE94030CAE8;
+    date: 2015-03-01 19:45:52 -0800;  author: alvin;  state: Exp;  commitid: 10054F3DCE94030CAE8;
+    """
+
+    commit = {}
+    try:
+        for line in line.split(';'):
+            line = line.strip()
+            if line == '':
+                continue
+
+            commit.update(get_dict(line))
+    except IndexError as e:
+        print e
+        return None
+
+    return commit
+
 def get_dict(line, delimiter=':'):
     info = {}
 
     try:
         line = line.strip()
-        line = line.split(delimiter)
+        line = line.split(delimiter, 1)
         key = line[0].strip()
-        value = line[1].strip()
+        value = line[1:]
+        value = ''.join(value)
+        value = value.strip()
         info[key] = value
     except IndexError as e:
         print e
@@ -136,7 +158,8 @@ def get_rlog(filepath, revision):
             continue
 
         if line.startswith('date:'):
-            info.update(get_dict(line))
+            cd = get_commit_date(line)
+            info.update(cd)
             info['comment'] = []
             while True:
                 line = p.stdout.readline()
@@ -203,7 +226,6 @@ def get_history(start=None, files=None, branch=None, summary=False):
         line = line.rstrip()
         line = line.split()
 
-        #print line
         try:
             f_change = line[0]
             f_date = line[1]
@@ -236,6 +258,9 @@ def get_history(start=None, files=None, branch=None, summary=False):
 
         commit_file = { 'filepath': filepath,
                         'version': version,
+                        'date': info['date'],
+                        'author': info['author'],
+                        'commitid': info['commitid'],
                         'change': f_change, }
 
         # if a new commit date, create hash
@@ -246,6 +271,10 @@ def get_history(start=None, files=None, branch=None, summary=False):
             commit[commit_time]['comment'] = info['comment']
             # get User
             commit[commit_time]['user'] = user
+
+            commit[commit_time]['author'] = info['author']
+            commit[commit_time]['date'] = info['date']
+            commit[commit_time]['commitid'] = info['commitid']
 
         # if commit is a removal of a file, don't use branch of commit
         if f_change == 'R':
@@ -273,16 +302,26 @@ def display(history):
         else:
             branch = 'trunk'
 
-        print k, branch, history[k]['user']
+        print 'commit', history[k]['commitid'], k, branch
+        print "%-7s %s" % ('Author:', history[k]['author'])
+        print "%-7s %s" % ('Date:', history[k]['date'])
+        print
         try:
             for m in history[k]['comment']:
                 print "    %s" % m
-
-            for c in history[k]['commits']:
-                print "  %-3s %-18s %s" % (c['change'], c['version'], c['filepath'])
             print
-        except:
-            pass
+
+            if len(history[k]['commits']) > 0:
+                for c in history[k]['commits']:
+                    #print "%-3s %-18s %s" % (c['change'], c['version'], c['filepath'])
+                    print "%-3s %-s %-18s %s %s" % (c['change'],
+                                                    c['version'],
+                                                    c['date'],
+                                                    c['commitid'],
+                                                    c['filepath'])
+                print
+        except Exception as e:
+            print e
 
 def main(args):
     files = args.files
