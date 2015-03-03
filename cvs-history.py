@@ -189,9 +189,6 @@ def get_rlog(filepath, revision):
     return info
 
 def get_history(start=None, files=None, branch=None, summary=False):
-    commits = []
-    commit = {}
-
     cmd = 'cvs history -a -c'
     cmd = cmd.split()
 
@@ -217,32 +214,39 @@ def get_history(start=None, files=None, branch=None, summary=False):
     else:
         print "Retrieving all commit history. Please wait..."
 
+    history = []
     p = subprocess.Popen(cmd,stdout=subprocess.PIPE)
     while True:
         line = p.stdout.readline()
         if not line:
             break
 
-        line = line.rstrip()
+        c = {}
+        line = line.strip()
         line = line.split()
 
         try:
-            f_change = line[0]
-            f_date = line[1]
-            f_time = line[2]
-            f_toffset = line[3]
-
-            user = line[4]
-            version = line[5]
-            filename = line[6]
-            dirname = line[7]
+            c['f_change'] = line[0]
+            c['date'] = " ".join(line[1:4])
+            c['author'] = line[4]
+            c['version'] = line[5]
+            c['filepath'] = os.path.join(line[7], line[6])
+            history.append(c)
         except IndexError as e:
             continue
 
-        commit_time = "%s %s %s" % (f_date, f_time, f_toffset)
+    # kill process if it has not yet terminated
+    if p.returncode is None:
+        p.kill()
 
-        # get file path
-        filepath = os.path.join(dirname, filename)
+    history = sorted(history, key=lambda k: k['date'], reverse=True)
+
+    commit = {}
+    for h in history:
+        f_change = h['f_change']
+        author = h['author']
+        version = h['version']
+        filepath = h['filepath']
 
         # discard files not belonging to module
         filepath_module = filepath.split('/')[0]
@@ -263,35 +267,36 @@ def get_history(start=None, files=None, branch=None, summary=False):
                         'commitid': info['commitid'],
                         'change': f_change, }
 
+        commitid = info['commitid']
         # if a new commit date, create hash
-        if commit_time not in commit:
-            commit[commit_time] = {}
-            commit[commit_time]['commits'] = []
+        if commitid not in commit:
+            commit[commitid] = {}
+            commit[commitid]['commits'] = []
             # get Comment
-            commit[commit_time]['comment'] = info['comment']
+            commit[commitid]['comment'] = info['comment']
             # get User
-            commit[commit_time]['user'] = user
+            commit[commitid]['author'] = author
 
-            commit[commit_time]['author'] = info['author']
-            commit[commit_time]['date'] = info['date']
-            commit[commit_time]['commitid'] = info['commitid']
+            commit[commitid]['author'] = info['author']
+            commit[commitid]['date'] = info['date']
+            commit[commitid]['commitid'] = info['commitid']
 
         # Get the latest date
-        if info['date'] > commit[commit_time]['date']:
-            commit[commit_time]['date'] = info['date']
+        if info['date'] > commit[commitid]['date']:
+            commit[commitid]['date'] = info['date']
 
         # if commit is a removal of a file, don't use branch of commit
         if f_change == 'R':
-            commit[commit_time]['branch'] = branch
+            commit[commitid]['branch'] = branch
         else:
-            commit[commit_time]['branch'] = info['branch_name']
+            commit[commitid]['branch'] = info['branch_name']
 
         # Set branch of commit
-        if 'branch' not in commit[commit_time]:
-            commit[commit_time]['branch'] = info['branch_name']
+        if 'branch' not in commit[commitid]:
+            commit[commitid]['branch'] = info['branch_name']
 
         if not summary:
-            commit[commit_time]['commits'].append(commit_file)
+            commit[commitid]['commits'].append(commit_file)
 
     # kill process if it has not yet terminated
     if p.returncode is None:
@@ -300,24 +305,24 @@ def get_history(start=None, files=None, branch=None, summary=False):
     return commit
 
 def display(history):
-    for k in sorted(history.keys(), reverse=True):
-        if history[k]['branch']:
-            branch = history[k]['branch']
+    history = sorted(history.items(), key=lambda (k,v): v['date'], reverse=True)
+    for id,ac in history:
+        if ac['branch']:
+            branch = ac['branch']
         else:
             branch = 'trunk'
 
-        print 'commit', history[k]['commitid'], k, branch
-        print "%-7s %s" % ('Author:', history[k]['author'])
-        print "%-7s %s" % ('Date:', history[k]['date'])
+        print 'commit', ac['commitid'], ac['date'], ac['author'], branch
+        print "%-7s %s" % ('Author:', ac['author'])
+        print "%-7s %s" % ('Date:', ac['date'])
         print
         try:
-            for m in history[k]['comment']:
+            for m in ac['comment']:
                 print "    %s" % m
             print
 
-            if len(history[k]['commits']) > 0:
-                for c in history[k]['commits']:
-                    #print "%-3s %-18s %s" % (c['change'], c['version'], c['filepath'])
+            if len(ac['commits']) > 0:
+                for c in ac['commits']:
                     print "%-3s %-s %-18s %s %s" % (c['change'],
                                                     c['version'],
                                                     c['date'],
