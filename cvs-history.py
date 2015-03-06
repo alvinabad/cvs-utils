@@ -253,6 +253,10 @@ def get_history(start=None, files=None, branch=None, summary=False):
         if not filepath_module in modules:
             continue
 
+        # skip if not trunk; this will speed up query
+        if branch is None and len(version.split('.')) > 2:
+            continue
+
         # get information about the file
         info = get_rlog(filepath, version)
 
